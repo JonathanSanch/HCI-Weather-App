@@ -9,15 +9,20 @@ import numpy as np
 # 1 map (n/a)
 # 1 button widget (n/a)
 # Checkbox widget (n/a)
+# Going to have 'about' section, 'home', and 'settings'
+# About
 
 # Subject to change
 st.set_page_config(
     page_title="Weather App Tentative Title",
     layout="wide",
     menu_items= {
-        'About' : "Welcome to your Weather Application!"
+        'About' : "Welcome to your Weather Application!",
+        'Get help' : "Contact one of the Devs for assistance!",
+        'Report a bug' : ""
     }
 )
 
 st.title("Weather App")
 st.header("Daily Forecast")
+
