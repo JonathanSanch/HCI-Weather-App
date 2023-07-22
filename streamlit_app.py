@@ -65,6 +65,11 @@ elif add_selectbox == "Contact Us":
         with right:
             st.empty()
 
+        st.text("")
+        agree = st.checkbox('I agree to possibly receive a response email')
+
+        if agree:
+            st.write('Thank you for your feedback!')
 
 
 else:
