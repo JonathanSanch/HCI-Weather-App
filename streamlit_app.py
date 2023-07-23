@@ -2,6 +2,8 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from datetime import datetime
+import json
+import requests
 
 # API requests (n/a)
 # Basic Webpage structure (n/a)
@@ -30,6 +32,25 @@ def local_css(file_name):
     with open(file_name) as f:
         st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
+def getGeolocationCity(city):
+    file = open("WeatherAPI_keys.json")
+    json_file = json.load(file)
+    # st.write(type(file), type(json_file))
+    api_key = json_file["openWeather"]
+    url = "http://api.openweathermap.org/geo/1.0/direct?q=" + city + "&limit=5&appid=" + api_key
+    response = requests.get(url).json()
+    # st.write(response)
+    cityName = response[0]["name"]
+    latitude = round(response[0]["lat"], 2)  # rounding latitude info from API to two decimal and storing in variable
+    longitude = round(response[0]["lon"], 2)  # rounding longitude info from API to two decimal and storing in variable
+    # st.write(cityName)
+    # st.write("The Geolocation of " + cityName + " is: " + str(latitude) + ", " + str(longitude))
+    return latitude, longitude
+
+def calculateTemperatureFahrenheit(temperatureKelvin):
+    fahrenheit = temperatureKelvin * (9 / 5) - 459.67
+    return fahrenheit
+
 
 local_css("style/style.css")
 
@@ -39,10 +60,22 @@ st.write("---")
 
 add_selectbox = st.sidebar.selectbox(
     "Select a Project",
-    ["Homepage", "Preferences", "Contact Us"]
+    ["Homepage", "Global Weather Data", "Preferences", "Contact Us"]
 )
 
-if add_selectbox == "Preferences":
+
+
+if add_selectbox == "Global Weather Data":
+
+    # Reading the CSV file for the project
+    GlobalWeatherData = pd.read_csv("CSV/GlobalWeatherData.CSV")
+    # Displaying data
+    st.dataframe(
+        GlobalWeatherData
+    )
+    st.caption("Table with Weather information around the world.")
+
+elif add_selectbox == "Preferences":
     st.header("Preferences")
 
 # ---- CONTACT ----
@@ -71,7 +104,6 @@ elif add_selectbox == "Contact Us":
         if agree:
             st.write('Thank you for your feedback!')
 
-
 else:
 
     st.header("Daily Forecast")
@@ -83,18 +115,42 @@ else:
     # This section is to be updated to interact with the cities API provides
     st.info("Please provide your location to receive today's forecast!")
 
-    option = st.selectbox(
+    userCity = st.selectbox(
         'Where are you located?',
-        ('','Miami', 'Orlando', 'New York', 'Los Angeles', 'Dallas')
+        ('','Miami', 'Orlando', 'New York', 'Los Angeles', 'Dallas'),
     )
 
-    if(option != ""):
+    if userCity != "":
+        # After this, probably include logic to display the city's forecast information for the day
         st.success('Your forecast is displayed below:', icon="✅️")
 
+        # First we need to get the Latitude and Longitude from user input/dropdown menu
+        latitudeCity = getGeolocationCity(userCity)[0]
+        longitudeCity = getGeolocationCity(userCity)[1]
 
+        # Connect to OpenWeather API
+        file = open("WeatherAPI_keys.json")
+        json_file = json.load(file)
+        api_key = json_file["openWeather"]
+        url = "https://api.openweathermap.org/data/3.0/onecall?lat=" + str(latitudeCity) + "&lon=" + str(
+            longitudeCity) + "&appid=" + api_key
+        response = requests.get(url).json()
 
-    # After this, probably include logic to display the city's forecast information for the day
-    st.write('You selected:', option)
+        # To get current temperature in Fahrenheit
+        temperatureFahrenheit = round(calculateTemperatureFahrenheit(response["current"]["temp"]))
+        # Get all the different daily values from API
+
+        weatherForecast = response["daily"][0]["summary"]  # check which one we like more
+
+        st.text_area("You selected: " + userCity,
+                     "The current temperature in " + userCity + " is: " + str(temperatureFahrenheit) + " °F\n"
+                     + weatherForecast + "!",disabled=True)
+
+        # Adding the map with Geolocation
+        geolocationData = {"latitude": latitudeCity, "longitude": longitudeCity}
+        locationDf = pd.DataFrame(geolocationData, index=[0])
+        # st.dataframe(locationDf)
+        st.map(data=locationDf)
 
     #  THIS IS THE SAMPLE CODE FOR THE TEXT AREA FEATURE
     # txt = st.text_area('Text to analyze', '''
