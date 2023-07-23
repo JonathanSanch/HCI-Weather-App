@@ -15,7 +15,7 @@ from datetime import datetime
 
 # Subject to change
 st.set_page_config(
-    page_title="Weather App Tentative Title",
+    page_title="Weather Forecast",
     page_icon = "⛅️",
     layout="wide",
     menu_items= {
@@ -73,7 +73,7 @@ elif add_selectbox == "Contact Us":
 
 
 else:
-    st.sidebar.success("Please provide your location to receive today's forecast!")
+
     st.header("Daily Forecast")
     t = datetime.now().strftime("%H:%M:%S")
     st.caption("Current time is: " + t)
@@ -81,16 +81,30 @@ else:
     # Comment of Weather Emojis for adding to forecast later☀️ 🌤 ⛅️ 🌥 ☁️ 🌦 🌧 ⛈ 🌩 🌨 ❄️
 
     # This section is to be updated to interact with the cities API provides
-    st.info('You must select a city in order to receive a forecast.', icon="ℹ️")
+    st.info("Please provide your location to receive today's forecast!")
+
     option = st.selectbox(
         'Where are you located?',
         ('','Miami', 'Orlando', 'New York', 'Los Angeles', 'Dallas')
     )
 
+    if(option != ""):
+        st.success('Your forecast is displayed below:', icon="✅️")
+
+
+
     # After this, probably include logic to display the city's forecast information for the day
     st.write('You selected:', option)
 
-
+    #  THIS IS THE SAMPLE CODE FOR THE TEXT AREA FEATURE
+    # txt = st.text_area('Text to analyze', '''
+    #     It was the best of times, it was the worst of times, it was
+    #     the age of wisdom, it was the age of foolishness, it was
+    #     the epoch of belief, it was the epoch of incredulity, it
+    #     was the season of Light, it was the season of Darkness, it
+    #     was the spring of hope, it was the winter of despair, (...)
+    #     ''')
+    # st.write('Sentiment:')
 
 
 
