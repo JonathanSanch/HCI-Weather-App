@@ -120,6 +120,31 @@ else:
         ('','Miami', 'Orlando', 'New York', 'Los Angeles', 'Dallas'),
     )
 
+    # Selectbox to choose temps over span of time.
+    timespanselect = st.selectbox(
+        ' ',
+        ('Hour', 'Day', 'Week')
+    )
+
+    # Elif below sets the data to show based on selected option.
+    # Replace "None" with temp data for that range of time.
+    if (timespanselect == 'Hour'):
+        linetempdata = None
+        lineXaxis = 'Hour'
+    elif (timespanselect == 'Day'):
+        linetempdata = None
+        lineXaxis = 'Day'
+    elif (timespanselect == 'Week'):
+        linetempdata = None
+        lineXaxis = 'Week'
+
+    # Line chart displays temp for selected city over a selected amount of time (Hour, Day, Week)
+    tempchart = pd.DataFrame(
+        data = linetempdata,
+        columns = ['Temperature'])
+
+    st.line_chart(tempchart, x = lineXaxis, y = 'Temperature', label_visibility="visible")
+
     if userCity != "":
         # After this, probably include logic to display the city's forecast information for the day
         st.success('Your forecast is displayed below:', icon="✅️")
