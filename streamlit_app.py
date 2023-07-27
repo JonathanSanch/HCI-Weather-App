@@ -4,6 +4,9 @@ import numpy as np
 from datetime import datetime
 import json
 import requests
+import time as tm
+import pydeck as pdk
+import plotly.express as px
 
 # API requests (n/a)
 # Basic Webpage structure (n/a)
@@ -51,6 +54,17 @@ def calculateTemperatureFahrenheit(temperatureKelvin):
     fahrenheit = temperatureKelvin * (9 / 5) - 459.67
     return fahrenheit
 
+def calculateUVindex(index):
+    if index >= 11:
+        return "extreme, take full precautions."
+    elif index >= 8:
+        return "very high, take precautions."
+    elif index >= 6:
+        return "high, we recommend wearing sunscreen and staying hydrated."
+    elif index >= 3:
+        return "moderate, we recommend wearing sunscreen."
+    else:
+        return "low"
 
 local_css("style/style.css")
 
@@ -60,23 +74,44 @@ st.write("---")
 
 add_selectbox = st.sidebar.selectbox(
     "Select a Project",
-    ["Homepage", "Global Weather Data", "Preferences", "Contact Us"]
+    ["Homepage", "Global Weather Data", "Data Display", "Contact Us"]
 )
 
 
 
 if add_selectbox == "Global Weather Data":
 
+    # st.write("Please select a color to highlight freezing temperatures around the world.")
+    color = st.color_picker('Please select a color to highlight freezing temperatures around the world.', '#ADD8E6')
+    st.write('The current color is', color)
+
     # Reading the CSV file for the project
     GlobalWeatherData = pd.read_csv("CSV/GlobalWeatherData.CSV")
     # Displaying data
     st.dataframe(
-        GlobalWeatherData
+        GlobalWeatherData.style.highlight_between(axis=1, subset=["Temperature"], color=color, right=0).format(
+            precision=2, subset=["Longitude", "Latitude", "Temperature", "Humidity", "Wind", "Clouds"])
     )
     st.caption("Table with Weather information around the world.")
 
-elif add_selectbox == "Preferences":
-    st.header("Preferences")
+elif add_selectbox == "Data Display":
+    st.header("Display")
+    chart_data = pd.read_csv("CSV/GraphChartsData.csv")
+
+    dataDisplay = st.radio("Choose from the following options: ",
+                           options=('Temperature', 'Wind', 'Humidity'))
+    # Elif below sets the data to show based on selected option.
+    # Replace "None" with temp data for that range of time.
+    if dataDisplay == 'Temperature':
+        st.line_chart(chart_data, x='Days', y='Temperature')
+        st.caption("Line chart displaying temperature overtime in Miami")
+    elif dataDisplay == 'Wind':
+        #Bar chart for wind
+        st.bar_chart(chart_data, x="Days", y="Wind")
+        st.caption("Bar chart displaying wind overtime in Miami")
+    elif dataDisplay == 'Humidity':
+        st.line_chart(chart_data, x='Days', y='Humidity')
+        st.caption("Line chart displaying humidity overtime in Miami")
 
 # ---- CONTACT ----
 elif add_selectbox == "Contact Us":
@@ -105,6 +140,11 @@ elif add_selectbox == "Contact Us":
             st.write('Thank you for your feedback!')
 
 else:
+    cities = ('', 'Miami', 'Orlando', 'New York', 'Los Angeles', 'Dallas', 'Washington D.C', 'London', 'Madrid',
+              'Buenos Aires', 'Rome', 'Caracas', 'Sao Paolo', 'Dubai', 'Moscow', 'Beijing', 'Tokyo',
+              'Bogota', 'Mexico City', 'Santiago de Chile', 'Ankara', 'Brasilia', 'Toronto', 'Ottawa',
+              'Stockholm', 'Zagreb', 'Athens', 'Lisbon', 'Chicago', 'Hawaii', 'San Francisco', 'San Diego',
+              'Atlanta', 'Boston', 'Houston', 'Austin', 'Baltimore', 'Seattle')
 
     st.header("Daily Forecast")
     t = datetime.now().strftime("%H:%M:%S")
@@ -117,7 +157,7 @@ else:
 
     userCity = st.selectbox(
         'Where are you located?',
-        ('','Miami', 'Orlando', 'New York', 'Los Angeles', 'Dallas'),
+        (sorted(cities)),
     )
 
     if userCity != "":
@@ -139,18 +179,35 @@ else:
         # To get current temperature in Fahrenheit
         temperatureFahrenheit = round(calculateTemperatureFahrenheit(response["current"]["temp"]))
         # Get all the different daily values from API
+        weatherForecast = response["daily"][0]["summary"]
+        minTemperature = round(calculateTemperatureFahrenheit(response["daily"][0]["temp"]["min"]))
+        maxTemperature = round(calculateTemperatureFahrenheit(response["daily"][0]["temp"]["max"]))
+        humidity = response["daily"][0]["humidity"]
+        dewPoint = round(calculateTemperatureFahrenheit(response["daily"][0]["dew_point"]))
+        windSpeed = response["daily"][0]["wind_speed"]
+        windDegrees = response["daily"][0]["wind_deg"]
+        uvIndex = response["daily"][0]["uvi"]
 
         weatherForecast = response["daily"][0]["summary"]  # check which one we like more
 
         st.text_area("You selected: " + userCity,
                      "The current temperature in " + userCity + " is: " + str(temperatureFahrenheit) + " °F\n"
-                     + weatherForecast + "!",disabled=True)
+                     + weatherForecast + "!\n" +
+                     "The minimum temperature for today is: " + str(minTemperature) + " °F\n" +
+                     "The maximum temperature for today is: " + str(maxTemperature) + " °F\n" +
+                     "The humidity for today is at: " + str(humidity) + "%\n" +
+                     "The Dew Point for today is: " + str(dewPoint) + "°\n" +
+                     "The wind speed for today is " + str(windSpeed) + "mph with a direction of " + str(windDegrees) +
+                     "°\n" +
+                     "The UV Index for today is " + str(uvIndex) + " which is considered " + calculateUVindex(uvIndex),
+                     height=215, disabled=True)
 
         # Adding the map with Geolocation
         geolocationData = {"latitude": latitudeCity, "longitude": longitudeCity}
         locationDf = pd.DataFrame(geolocationData, index=[0])
         # st.dataframe(locationDf)
         st.map(data=locationDf)
+
 
     #  THIS IS THE SAMPLE CODE FOR THE TEXT AREA FEATURE
     # txt = st.text_area('Text to analyze', '''
